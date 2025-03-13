@@ -1,0 +1,5 @@
+syntax: glob
+.repoint*
+*~
+build
+vamp-plugin-sdk

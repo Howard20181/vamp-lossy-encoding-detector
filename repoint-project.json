@@ -1,0 +1,13 @@
+{
+    "config": {
+        "extdir": "."
+    },
+    "libraries": {
+        "vamp-plugin-sdk": {
+            "vcs": "git",
+            "service": "github",
+            "owner": "vamp-plugins"
+        }
+    }
+}
+

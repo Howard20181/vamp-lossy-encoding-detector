@@ -1,0 +1,7 @@
+{
+  "libraries": {
+    "vamp-plugin-sdk": {
+      "pin": "44c2487763eb248a933e9eff9169cfadee375009"
+    }
+  }
+}
