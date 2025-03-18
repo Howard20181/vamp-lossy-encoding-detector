@@ -2,4 +2,5 @@ syntax: glob
 .repoint*
 *~
 build
+build_*
 vamp-plugin-sdk

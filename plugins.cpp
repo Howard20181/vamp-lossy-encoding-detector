@@ -3,11 +3,13 @@
 #include <vamp-sdk/PluginAdapter.h>
 
 #include "LossyDetector.h"
+#include "QuickLossyDetector.h"
 
 
 // Declare one static adapter here for each plugin class in this library.
 
 static Vamp::PluginAdapter<LossyDetector> lossyDetectorAdapter;
+static Vamp::PluginAdapter<QuickLossyDetector> quickLossyDetectorAdapter;
 
 
 // This is the entry-point for the library, and the only function that
@@ -25,6 +27,7 @@ vampGetPluginDescriptor(unsigned int version, unsigned int index)
 
     switch (index) {
     case  0: return lossyDetectorAdapter.getDescriptor();
+    case  1: return quickLossyDetectorAdapter.getDescriptor();
     default: return 0;
     }
 }

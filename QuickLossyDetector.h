@@ -1,16 +1,18 @@
 
-#ifndef LOSSY_DETECTOR_H
-#define LOSSY_DETECTOR_H
+#ifndef QUICK_LOSSY_DETECTOR_H
+#define QUICK_LOSSY_DETECTOR_H
 
 #include <vamp-sdk/Plugin.h>
 
 #include "types.h"
 
-class LossyDetector : public Vamp::Plugin
+#include <deque>
+
+class QuickLossyDetector : public Vamp::Plugin
 {
 public:
-    LossyDetector(float inputSampleRate);
-    virtual ~LossyDetector();
+    QuickLossyDetector(float inputSampleRate);
+    virtual ~QuickLossyDetector();
 
     std::string getIdentifier() const;
     std::string getName() const;
@@ -45,15 +47,11 @@ public:
 
 protected:
     mutable int m_lossyOutput;
-    mutable int m_functionOutput;
     int m_blockSize;
     int m_imageWidth;
-    t_2 m_buildingImage;
-    int m_lossyCount;
-    int m_totalCount;
+    std::deque<t_1> m_buildingImage;
+    bool m_enough;
     Vamp::RealTime m_lastTimestamp;
 };
-
-
 
 #endif

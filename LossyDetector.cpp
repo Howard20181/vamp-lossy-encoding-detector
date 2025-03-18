@@ -8,13 +8,12 @@
 
 using namespace std;
 
-// fastest 7.75 user 8.10 elapsed
-// 7.23user 0.40system 0:07.66elapsed
-
 LossyDetector::LossyDetector(float inputSampleRate) :
     Plugin(inputSampleRate),
     m_blockSize(512),
-    m_imageWidth(172)
+    m_imageWidth(172),
+    m_lossyCount(0),
+    m_totalCount(0)
 {
 }
 
@@ -144,7 +143,7 @@ LossyDetector::getOutputDescriptors() const
     d.isQuantized = true;
     d.quantizeStep = 1.f;
     d.sampleType = OutputDescriptor::VariableSampleRate;
-    d.hasDuration = false;
+    d.hasDuration = true;
     m_lossyOutput = outputNo++;
     list.push_back(d);
 
@@ -182,13 +181,18 @@ LossyDetector::initialise(size_t channels, size_t stepSize, size_t blockSize)
 void
 LossyDetector::reset()
 {
-    // Clear buffers, reset stored values, etc
+    m_buildingImage = {};
+    m_lossyCount = 0;
+    m_totalCount = 0;
+    m_lastTimestamp = Vamp::RealTime::zeroTime;
 }
 
 LossyDetector::FeatureSet
 LossyDetector::process(const float *const *inputBuffers,
                        Vamp::RealTime timestamp)
 {
+    m_lastTimestamp = timestamp;
+    
     // The pipeline used in training is
     // 
     // 1. Open file at native rate
@@ -255,8 +259,11 @@ LossyDetector::process(const float *const *inputBuffers,
         f.label = "Original";
     } else {
         f.label = "Lossy";
+        ++m_lossyCount;
     }
 
+    ++m_totalCount;
+    
     fs[m_functionOutput].push_back(f);
 
     return fs;
@@ -265,6 +272,23 @@ LossyDetector::process(const float *const *inputBuffers,
 LossyDetector::FeatureSet
 LossyDetector::getRemainingFeatures()
 {
-    return FeatureSet();
+    Feature f;
+
+    f.hasTimestamp = true;
+    f.timestamp = Vamp::RealTime::zeroTime;
+    f.hasDuration = true;
+    f.duration = m_lastTimestamp;
+
+    if (m_lossyCount * 4 >= m_totalCount) {
+        f.values.push_back(1.f);
+        f.label = "Lossy";
+    } else {
+        f.values.push_back(0.f);
+        f.label = "Original";
+    }
+    
+    FeatureSet fs;
+    fs[m_lossyOutput].push_back(f);
+    return fs;
 }
 

@@ -21,6 +21,7 @@ system = host_machine.system()
 
 plugin_files = [
   'LossyDetector.cpp',
+  'QuickLossyDetector.cpp',
   'detect.cpp',
   'weights.cpp',
   'plugins.cpp',
