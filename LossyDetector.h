@@ -44,6 +44,8 @@ public:
     FeatureSet getRemainingFeatures();
 
 protected:
+    mutable int m_lossyOutput;
+    mutable int m_functionOutput;
     int m_blockSize;
     int m_imageWidth;
     t_2 m_buildingImage;

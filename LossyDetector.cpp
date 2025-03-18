@@ -129,6 +129,8 @@ LossyDetector::getOutputDescriptors() const
 {
     OutputList list;
 
+    int outputNo = 0;
+
     OutputDescriptor d;
     d.identifier = "lossy";
     d.name = "Lossy";
@@ -143,6 +145,24 @@ LossyDetector::getOutputDescriptors() const
     d.quantizeStep = 1.f;
     d.sampleType = OutputDescriptor::VariableSampleRate;
     d.hasDuration = false;
+    m_lossyOutput = outputNo++;
+    list.push_back(d);
+
+    d.identifier = "cf";
+    d.name = "Classification function";
+    d.description = "A series of values indicating the changing detected likelihood of lossy encoding, from 0 (believed to be lossless) to 1 (believed lossy).";
+    d.unit = "";
+    d.hasFixedBinCount = true;
+    d.binCount = 1;
+    d.hasKnownExtents = true;
+    d.minValue = 0.f;
+    d.maxValue = 1.f;
+    d.isQuantized = false;
+    d.quantizeStep = 0.f;
+    d.sampleType = OutputDescriptor::FixedSampleRate;
+    d.sampleRate = m_inputSampleRate / float(m_imageWidth);
+    d.hasDuration = false;
+    m_functionOutput = outputNo++;
     list.push_back(d);
 
     return list;
@@ -177,49 +197,69 @@ LossyDetector::process(const float *const *inputBuffers,
     // 4. Window with a periodic Hann window
     // 5. Forward FFT of size 512. (So far, the Vamp host SDK can be
     //    assumed to have managed this for us)
-    // 6. Scale by sqrt(512) - Note the Vamp SDK doesn't actually say
+    // 6. Take magnitudes
+    // 7. Scale by sqrt(512) - Note the Vamp SDK doesn't actually say
     //    anything about frequency-domain input scaling. I think in
     //    practice it is generally unscaled?
-    // 7. Convert to dB (using 20 * log10)
-    // 8. Scale by 1/120, add 1, clamp to range 0-1
-    // 9. (or between any two steps from 5 onward) Take a section as a
+    // 8. Convert to dB (using 20 * log10)
+    // 9. Scale by 1/120, add 1, clamp to range 0-1
+    // 10. (or between any two steps from 5 onward) Take a section as a
     //    matrix of width 172 and height 257 - in training we do this
     //    three times, starting at 31, 74, and 118.4 seconds in
-    // 10. Run classifier
+    // 11. Run classifier
 
     int height = m_blockSize / 2 + 1;
     float scale = 1.f / sqrtf(float(m_blockSize));
     t_1 column(height, 0.f);
 
     for (int i = 0; i < height; ++i) {
-        float v = inputBuffers[0][i] * scale;
-        if (v <= 0.0) {
-            column[i] = 0.f;
+        int ix = height - i - 1; // Image is "upside-down"
+        float re = inputBuffers[0][i*2];
+        float im = inputBuffers[0][i*2+1];
+        float mag = sqrtf(re*re + im*im);
+        mag *= scale;
+        if (mag == 0.0) {
+            column[ix] = 0.f;
         } else {
-            float db = 20.f * log10f(v);
+            float db = 20.f * log10f(mag);
             float level = 1.f + (db / 120.f);
             if (level < 0.f) level = 0.f;
             if (level > 1.f) level = 1.f;
-            column[i] = level;
+            column[ix] = level;
         }
     }
-
+    
     m_buildingImage.push_back(column);
 
-    if (m_buildingImage.size() < m_imageWidth) {
-        return FeatureSet();
+    Vamp::RealTime rtWidth = Vamp::RealTime::frame2RealTime
+        ((m_imageWidth - 1) * (m_blockSize/2), m_inputSampleRate);
+    
+    FeatureSet fs;
+    
+    if (int(m_buildingImage.size()) < m_imageWidth) {
+        return fs;
     }
-
+    
     t_1 result = classify(m_buildingImage);
-    cerr << "result = [ ";
-    for (auto p : result) {
-        cerr << p << " ";
-    }
-    cerr << "]" << endl;
 
     m_buildingImage = {};
 
-    return FeatureSet();
+    Feature f;
+
+    f.hasTimestamp = true;
+    f.timestamp = timestamp - rtWidth;
+    f.hasDuration = false;
+    f.values.push_back(result[0]); // result probs are ordered lossy, original
+
+    if (result[0] < 0.5f) {
+        f.label = "Original";
+    } else {
+        f.label = "Lossy";
+    }
+
+    fs[m_functionOutput].push_back(f);
+
+    return fs;
 }
 
 LossyDetector::FeatureSet
