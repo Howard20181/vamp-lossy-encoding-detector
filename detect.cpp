@@ -1,4 +1,6 @@
 
+#include "detect.h"
+
 #include <vector>
 #include <string>
 #include <map>
@@ -8,8 +10,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
-
-#include "types.h"
 
 //#define VERBOSE 1
 
@@ -56,22 +56,86 @@ convolve(const t_3 &in,
 
     auto out = t_3 (out_height, t_2 (out_width, t_1 (nkernels, 0.f)));
 
-    for (size_t k = 0; k < nkernels; ++k) {
-        for (size_t y = 0; y < out_height; ++y) {
-            for (size_t x = 0; x < out_width; ++x) {
-                for (size_t c = 0; c < depth; ++c) {
-                    for (size_t ky = 0; ky < kernel_height; ++ky) {
-                        for (size_t kx = 0; kx < kernel_width; ++kx) {
+    for (size_t y = 0; y < out_height; ++y) {
+        for (size_t x = 0; x < out_width; ++x) {
+            for (size_t ky = 0; ky < kernel_height; ++ky) {
+                for (size_t kx = 0; kx < kernel_width; ++kx) {
+                    for (size_t c = 0; c < depth; ++c) {
+                        for (size_t k = 0; k < nkernels; ++k) {
                             out[y][x][k] +=
                                 weights[ky][kx][c][k] * in[y + ky][x + kx][c];
                         }
                     }
                 }
-                out[y][x][k] += biases[k];
             }
         }
     }
 
+    for (size_t y = 0; y < out_height; ++y) {
+        for (size_t x = 0; x < out_width; ++x) {
+            for (size_t k = 0; k < nkernels; ++k) {
+                out[y][x][k] += biases[k];
+            }
+        }
+    }
+    
+    return out;
+}
+
+t_3
+convolve_WH(const t_2 &in,
+            const t_4 &weights,
+            const t_1 &biases)
+{
+    // Equivalent to convolve, above, for a simple input with a single
+    // channel in WH rather than HWC format
+
+    size_t kernel_height = weights.size();
+    size_t kernel_width = weights[0].size();
+    size_t nkernels = weights[0][0][0].size();
+    
+    size_t out_width = in.size();
+    if (out_width < kernel_width - 1) {
+        throw runtime_error("Input too small in convolve");
+    }
+
+    size_t out_height = in[0].size();
+    if (out_height < kernel_height - 1) {
+        throw runtime_error("Input too small in convolve");
+    }
+        
+    out_height -= kernel_height - 1;
+    out_width -= kernel_width - 1;
+
+#ifdef VERBOSE
+    cerr << "convolve_WH: " << nkernels << " kernels of size "
+         << kernel_width << "x" << kernel_height << "; output size "
+         << out_width << "x" << out_height << "; input depth fixed to 1" << endl;
+#endif
+
+    auto out = t_3 (out_height, t_2 (out_width, t_1 (nkernels, 0.f)));
+
+    for (size_t y = 0; y < out_height; ++y) {
+        for (size_t x = 0; x < out_width; ++x) {
+            for (size_t ky = 0; ky < kernel_height; ++ky) {
+                for (size_t kx = 0; kx < kernel_width; ++kx) {
+                    for (size_t k = 0; k < nkernels; ++k) {
+                        out[y][x][k] +=
+                            weights[ky][kx][0][k] * in[x + kx][y + ky];
+                    }
+                }
+            }
+        }
+    }
+
+    for (size_t y = 0; y < out_height; ++y) {
+        for (size_t x = 0; x < out_width; ++x) {
+            for (size_t k = 0; k < nkernels; ++k) {
+                out[y][x][k] += biases[k];
+            }
+        }
+    }
+    
     return out;
 }
 
@@ -149,6 +213,43 @@ zeroPad(const t_3 &in,
             for (size_t c = 0; c < depth; ++c) {
                 out[y + pad_y][x + pad_x][c] = in[y][x][c];
             }
+        }
+    }
+
+    return out;
+}
+
+t_2
+zeroPad_WH(const t_2 &in,
+           size_t pad_y,
+           size_t pad_x)
+{
+    // Again a simplified version of zeroPad. Output is also WH format
+    
+    size_t in_width = in.size();
+    if (in_width == 0) {
+        throw runtime_error("Input too small in zeroPad");
+    }
+
+    size_t in_height = in[0].size();
+    if (in_height == 0) {
+        throw runtime_error("Input too small in zeroPad");
+    }
+    
+#ifdef VERBOSE
+    cerr << "zeroPad: input size " << in_width << "x" << in_height
+         << "; padding " << pad_x << "," << pad_y << "; output size "
+         << in_width + 2 * pad_x << "x" << in_height + 2 * pad_y
+         << " and depth fixed to 1" << endl;
+#endif
+    
+    auto out =
+        t_2 (in_width + 2 * pad_x,
+             t_1 (in_height + 2 * pad_y, 0.f));
+
+    for (size_t y = 0; y < in_height; ++y) {
+        for (size_t x = 0; x < in_width; ++x) {
+            out[x + pad_x][y + pad_y] = in[x][y];
         }
     }
 
@@ -295,31 +396,32 @@ activation(const t_1 &in,
 }
 
 t_1
-classify(const t_3 &image)
+classify(const t_2 &imageWH)
 {
-    t_3 t;
+    t_3 t3;
+    t_2 t2;
 
-    t = zeroPad(image, 1, 1);
-    t = convolve(t, weights_firstConv, biases_firstConv);
-    t = activation(t, "relu");
-    t = maxPool(t, 2, 2);
+    t2 = zeroPad_WH(imageWH, 1, 1);
+    t3 = convolve_WH(t2, weights_firstConv, biases_firstConv);
+    t3 = activation(t3, "relu");
+    t3 = maxPool(t3, 2, 2);
 
-    t = zeroPad(t, 1, 1);
-    t = convolve(t, weights_secondConv, biases_secondConv);
-    t = activation(t, "relu");
-    t = maxPool(t, 2, 2);
+    t3 = zeroPad(t3, 1, 1);
+    t3 = convolve(t3, weights_secondConv, biases_secondConv);
+    t3 = activation(t3, "relu");
+    t3 = maxPool(t3, 2, 2);
 
-    t = zeroPad(t, 1, 1);
-    t = convolve(t, weights_thirdConv, biases_thirdConv);
-    t = activation(t, "relu");
-    t = maxPool(t, 2, 2);
+    t3 = zeroPad(t3, 1, 1);
+    t3 = convolve(t3, weights_thirdConv, biases_thirdConv);
+    t3 = activation(t3, "relu");
+    t3 = maxPool(t3, 2, 2);
 
-    t = zeroPad(t, 1, 1);
-    t = convolve(t, weights_fourthConv, biases_fourthConv);
-    t = activation(t, "relu");
-    t = maxPool(t, 2, 2);
+    t3 = zeroPad(t3, 1, 1);
+    t3 = convolve(t3, weights_fourthConv, biases_fourthConv);
+    t3 = activation(t3, "relu");
+    t3 = maxPool(t3, 2, 2);
 
-    t_1 flat = flatten(t);
+    t_1 flat = flatten(t3);
     
     flat = dense(flat, weights_firstDense, biases_firstDense);
     flat = activation(flat, "relu");

@@ -1,11 +1,20 @@
 
 #include "LossyDetector.h"
 
+#include "detect.h"
 #include "version.h"
 
+#include <cmath>
+
+using namespace std;
+
+// fastest 7.75 user 8.10 elapsed
+// 7.23user 0.40system 0:07.66elapsed
 
 LossyDetector::LossyDetector(float inputSampleRate) :
-    Plugin(inputSampleRate)
+    Plugin(inputSampleRate),
+    m_blockSize(512),
+    m_imageWidth(172)
 {
 }
 
@@ -58,13 +67,13 @@ LossyDetector::getInputDomain() const
 size_t
 LossyDetector::getPreferredBlockSize() const
 {
-    return 512;
+    return m_blockSize;
 }
 
 size_t 
 LossyDetector::getPreferredStepSize() const
 {
-    return 256;
+    return m_blockSize / 2;
 }
 
 size_t
@@ -163,9 +172,7 @@ LossyDetector::process(const float *const *inputBuffers,
     // The pipeline used in training is
     // 
     // 1. Open file at native rate
-    // 2. Take first channel. (Later perhaps: mix to mono. Let's mix
-    //    to mono here because that's what we get anyway with channels
-    //    set to 1, then compare)
+    // 2. Mix to mono
     // 3. Frame with 512 blocksize, 256 hop (regardless of sample rate)
     // 4. Window with a periodic Hann window
     // 5. Forward FFT of size 512. (So far, the Vamp host SDK can be
@@ -180,8 +187,38 @@ LossyDetector::process(const float *const *inputBuffers,
     //    three times, starting at 31, 74, and 118.4 seconds in
     // 10. Run classifier
 
-    
-    
+    int height = m_blockSize / 2 + 1;
+    float scale = 1.f / sqrtf(float(m_blockSize));
+    t_1 column(height, 0.f);
+
+    for (int i = 0; i < height; ++i) {
+        float v = inputBuffers[0][i] * scale;
+        if (v <= 0.0) {
+            column[i] = 0.f;
+        } else {
+            float db = 20.f * log10f(v);
+            float level = 1.f + (db / 120.f);
+            if (level < 0.f) level = 0.f;
+            if (level > 1.f) level = 1.f;
+            column[i] = level;
+        }
+    }
+
+    m_buildingImage.push_back(column);
+
+    if (m_buildingImage.size() < m_imageWidth) {
+        return FeatureSet();
+    }
+
+    t_1 result = classify(m_buildingImage);
+    cerr << "result = [ ";
+    for (auto p : result) {
+        cerr << p << " ";
+    }
+    cerr << "]" << endl;
+
+    m_buildingImage = {};
+
     return FeatureSet();
 }
 
