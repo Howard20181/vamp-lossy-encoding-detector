@@ -61,6 +61,7 @@ convolve(const t_3 &in,
             for (size_t ky = 0; ky < kernel_height; ++ky) {
                 for (size_t kx = 0; kx < kernel_width; ++kx) {
                     for (size_t c = 0; c < depth; ++c) {
+#pragma GCC ivdep
                         for (size_t k = 0; k < nkernels; ++k) {
                             out[y][x][k] +=
                                 weights[ky][kx][c][k] * in[y + ky][x + kx][c];
@@ -119,6 +120,7 @@ convolve_WH(const t_2 &in,
         for (size_t x = 0; x < out_width; ++x) {
             for (size_t ky = 0; ky < kernel_height; ++ky) {
                 for (size_t kx = 0; kx < kernel_width; ++kx) {
+#pragma GCC ivdep
                     for (size_t k = 0; k < nkernels; ++k) {
                         out[y][x][k] +=
                             weights[ky][kx][0][k] * in[x + kx][y + ky];
