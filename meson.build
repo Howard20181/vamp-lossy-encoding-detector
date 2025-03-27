@@ -39,16 +39,24 @@ if system == 'linux'
   vamp_symbol_args += [
     '-Wl,--version-script=' + meson.current_source_dir() / 'vamp-plugin.map'
   ]
+  vamp_install_dir = '/usr/local/lib/vamp'
 elif system == 'darwin'
   vamp_symbol_args += [
     '-exported_symbols_list', meson.current_source_dir() / 'vamp-plugin.list'
   ]
+  vamp_install_dir = '/Library/Audio/Plug-Ins/Vamp'
 elif system == 'windows'
   vamp_symbol_args += [
     '-EXPORT:vampGetPluginDescriptor'
   ]
+  vamp_install_dir = 'C:/Program Files/Vamp Plugins'
 endif
 
+install_data(
+  'vamp-lossy-encoding-detector.cat',
+  install_dir: vamp_install_dir,
+)
+  
 plugin_library = shared_library(
   'vamp-lossy-encoding-detector',
   plugin_files,
@@ -61,5 +69,5 @@ plugin_library = shared_library(
   ],
   name_prefix: '',
   install: true,
+  install_dir: vamp_install_dir,
 )  
-

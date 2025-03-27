@@ -1,3 +1,33 @@
+/*
+    Vamp Lossy Encoding Detector
+    Chris Cannam, Queen Mary University of London
+    Copyright (c) 2025 Queen Mary University of London
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use, copy,
+    modify, merge, publish, distribute, sublicense, and/or sell copies
+    of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    Except as contained in this notice, the names of the Centre for
+    Digital Music; Queen Mary, University of London; and Chris Cannam
+    shall not be used in advertising or otherwise to promote the sale,
+    use or other dealings in this Software without prior written
+    authorization.
+*/
 
 #include "QuickLossyDetector.h"
 
@@ -95,13 +125,13 @@ QuickLossyDetector::getParameterDescriptors() const
 }
 
 float
-QuickLossyDetector::getParameter(string identifier) const
+QuickLossyDetector::getParameter(string) const
 {
     return 0;
 }
 
 void
-QuickLossyDetector::setParameter(string identifier, float value) 
+QuickLossyDetector::setParameter(string, float) 
 {
 }
 
@@ -119,7 +149,7 @@ QuickLossyDetector::getCurrentProgram() const
 }
 
 void
-QuickLossyDetector::selectProgram(string name)
+QuickLossyDetector::selectProgram(string)
 {
 }
 
@@ -154,9 +184,25 @@ bool
 QuickLossyDetector::initialise(size_t channels, size_t stepSize, size_t blockSize)
 {
     if (channels < getMinChannelCount() ||
-	channels > getMaxChannelCount()) return false;
+	channels > getMaxChannelCount()) {
+        std::cerr << "QuickLossyDetector::initialise: unsupported channel count "
+                  << channels << std::endl;
+        return false;
+    }
 
-    // Real initialisation work goes here!
+    if (blockSize != getPreferredBlockSize()) {
+        std::cerr << "QuickLossyDetector::initialise: block size " << blockSize
+                  << " must match requested block size " << getPreferredBlockSize()
+                  << std::endl;
+        return false;
+    }
+
+    if (stepSize != getPreferredStepSize()) {
+        std::cerr << "QuickLossyDetector::initialise: step size " << stepSize
+                  << " must match requested step size " << getPreferredStepSize()
+                  << std::endl;
+        return false;
+    }
 
     return true;
 }
