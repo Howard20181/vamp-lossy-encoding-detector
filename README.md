@@ -6,9 +6,9 @@ This is a Vamp audio analysis plugin that detects whether a music
 audio recording has been encoded to a lossy format such as MP3.
 
 It does so by analysing the audio signal without reference to its
-current container format, so it can report whether a signal found in a
-lossless file (such as WAV or FLAC) actually came from decoding a
-previous lossy encoding.
+current file or stream format, so it can report whether a signal found
+in a lossless file (such as WAV or FLAC) was actually the result of
+decoding a previous lossy encoding.
 
 Usage
 -----
@@ -42,10 +42,11 @@ see only that last line. Much more sophisticated arrangements
 involving many input files can be constructed using Sonic Annotator.)
 
 There is also a "quick" version of the plugin, which runs much faster
-by inspecting only a tiny part of the input audio (one second starting
-30s into the file, or at the end if the file is less than 30s
-long). It's much faster and actually still works pretty well. To use
-that, replace `lossydetector` with `quicklossydetector` in the above.
+by inspecting only a tiny part of the input audio (one second long,
+starting 30s into the file - or at the end if the file is less than
+30s long). It's much faster and actually still works pretty well. To
+use that, replace `lossydetector` with `quicklossydetector` in the
+above.
 
 
 Compiling and Installing
