@@ -15,11 +15,11 @@ Usage
 -----
 
 Because this is a Vamp plugin, it needs to be run in a Vamp plugin
-host. As an example, if you have this plugin compiled and installed in
+host. For example, if you have this plugin compiled and installed in
 the usual place (see "Compiling and Installing" below) and you have
 `vamp-simple-host` from the [Vamp Plugin
-SDK](https://github.com/vamp-plugins/vamp-plugin-sdk) in your PATH,
-you might run
+SDK](https://github.com/vamp-plugins/vamp-plugin-sdk) installed in
+your PATH, you might run
 
 ```
 $ vamp-simple-host vamp-lossy-encoding-detector:lossydetector myfile.wav
@@ -42,29 +42,29 @@ Output is: "lossy"
 rest to stderr, so you could add `2>/dev/null` to the command line to
 see only that last line. Much more sophisticated arrangements
 involving many input files can be constructed using [Sonic
-Annotator](https://sonicvisualiser.org/sonic-annotator).)
+Annotator](https://vamp-plugins.org/sonic-annotator/).)
 
 There is also a "quick" version of the plugin, which runs much faster
 by inspecting only a tiny part of the input audio (one second long,
-starting 30s into the file - or at the end if the file is less than
-30s long). It's much faster and actually still works pretty well. To
-use that, replace `lossydetector` with `quicklossydetector` in the
-above.
+starting from 30s into the file, or at the end if the file is less
+than 30s long). It's much faster and actually still works pretty
+well. To use that, replace `lossydetector` with `quicklossydetector`
+in the above.
 
 
 Compiling and Installing
 ------------------------
 
-The build uses the Meson build system.
+The build uses the [Meson](https://mesonbuild.com/) build system.
 
-First you need the Vamp plugin SDK code checked out in a subdirectory
-of this one called `vamp-plugin-sdk`:
+First you need the Vamp plugin SDK code checked out into a
+subdirectory of this one called `vamp-plugin-sdk`:
 
 ```
 $ git clone https://github.com/vamp-plugins/vamp-plugin-sdk
 ```
 
-(Or for developers, `./repoint install`)
+(Or for developers, `./repoint install` does this)
 
 Then build using Meson and Ninja:
 
@@ -95,7 +95,7 @@ Royo-Letelier, and Moussallam,
 [Codec-Independent Lossy Audio Compression Detection](http://romain-hennequin.fr/doc/ICASSP2017_Deezer_quality_estimation.pdf),
 ICASSP 2017.
 
-It's a convolutional neural-network image classifier trained on images
+It's a convolutional neural network image classifier trained on images
 of spectrograms. Our spectrogram configuration is similar to the paper
 but our images are smaller (1s in length) and our model has one fewer
 fully-connected layer.
@@ -109,7 +109,7 @@ Q3; Opus VBR; AAC (via FAAC) in default and 320k settings. The
 augmentations were (separately) resampling to 48kHz, adjusting the
 level by -3dB, and applying 1.1x time-stretch using [Rubber Band](https://breakfastquay.com/rubberband/).
 
-Three clips were taken from different parts of the resulting files and
+Three clips were taken from different parts of each track and
 processed in each way, for a total of about 4300 examples. They were
 assigned to training or validation based on the identity of the clip,
 avoiding the same clip appearing in different forms in
