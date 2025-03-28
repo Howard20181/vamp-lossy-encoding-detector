@@ -47,8 +47,8 @@ Annotator](https://vamp-plugins.org/sonic-annotator/).)
 The default output of the detector (an output called `lossy`) returns
 only the single estimate shown above; it also has an output called
 `cf` (for "classification function") which returns an estimate for
-each time step. This usually isn't very illuminating because the CNN
-tends to be so confident one way or another, but occasionally it
+each time step. This usually isn't very illuminating because the
+method tends to overconfidence one way or another, but occasionally it
 betrays some uncertainty:
 
 ```
@@ -66,12 +66,12 @@ $ vamp-simple-host vamp-lossy-encoding-detector:lossydetector:cf example.wav 2>/
 $
 ```
 
-There is also a "quick" version of the plugin, which runs much faster
-by inspecting only a tiny part of the input audio (one second long,
-starting from 30s into the file, or at the end if the file is less
-than 30s long). It's much faster and actually still works pretty
-well. To use that, replace `lossydetector` with `quicklossydetector`
-in the above.
+There is also a "quick" version of the plugin, which only has the
+default `lossy` output, which runs much faster by inspecting only a
+tiny part of the input audio (one second long, starting from 30s into
+the file, or at the end if the file is less than 30s long). It's much
+faster and actually still works pretty well. To use that, replace
+`lossydetector` with `quicklossydetector`.
 
 
 Compiling and Installing
