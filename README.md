@@ -44,6 +44,28 @@ see only that last line. Much more sophisticated arrangements
 involving many input files can be constructed using [Sonic
 Annotator](https://vamp-plugins.org/sonic-annotator/).)
 
+The default output of the detector (an output called `lossy`) returns
+only the single estimate shown above; it also has an output called
+`cf` (for "classification function") which returns an estimate for
+each time step. This usually isn't very illuminating because the CNN
+tends to be so confident one way or another, but occasionally it
+betrays some uncertainty:
+
+```
+$ vamp-simple-host vamp-lossy-encoding-detector:lossydetector:cf example.wav 2>/dev/null | head -25 | tail -10
+ 14.980770602: 6.56757e-07 Original
+ 15.979228627: 0.999746 Lossy
+ 16.977686652: 0.998157 Lossy
+ 17.976144677: 0.996165 Lossy
+ 18.974602702: 0.999981 Lossy
+ 19.973060727: 1.17946e-05 Original
+ 20.971518752: 0.998787 Lossy
+ 21.969976777: 4.33869e-06 Original
+ 22.968434802: 0.777278 Lossy
+ 23.966892827: 0.963398 Lossy
+$
+```
+
 There is also a "quick" version of the plugin, which runs much faster
 by inspecting only a tiny part of the input audio (one second long,
 starting from 30s into the file, or at the end if the file is less
