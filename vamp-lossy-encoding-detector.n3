@@ -29,10 +29,11 @@
 ## Properties of the plugin library, and references to the plugins it contains
 
 plugbase:library a vamp:PluginLibrary ;
-    vamp:identifier        "Lossy Encoding Detector" ;
+    vamp:identifier        "vamp-lossy-encoding-detector" ;
     foaf:maker             :library_maker ; 
     vamp:available_plugin  plugbase:lossydetector ; 
     vamp:available_plugin  plugbase:quicklossydetector ; 
+    dc:title              "Lossy Encoding Detector" ;
     dc:description        """Tests and reports whether audio appears to have been previously compressed using a lossy encoder such as MP3.""" ;
     foaf:page              <https://github.com/cannam/vamp-lossy-encoding-detector> ;
     doap:download-page     <https://github.com/cannam/vamp-lossy-encoding-detector/releases> 
