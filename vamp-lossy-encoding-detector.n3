@@ -29,7 +29,7 @@
 ## Properties of the plugin library, and references to the plugins it contains
 
 plugbase:library a vamp:PluginLibrary ;
-    vamp:identifier        "vamp-lossy-encoding-detector" ;
+    vamp:identifier        "Lossy Encoding Detector" ;
     foaf:maker             :library_maker ; 
     vamp:available_plugin  plugbase:lossydetector ; 
     vamp:available_plugin  plugbase:quicklossydetector ; 
