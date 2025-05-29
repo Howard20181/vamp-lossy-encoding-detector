@@ -1,0 +1,113 @@
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
+@prefix vamp:     <http://purl.org/ontology/vamp/> .
+@prefix plugbase: <http://vamp-plugins.org/rdf/plugins/vamp-lossy-encoding-detector#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix dc:       <http://purl.org/dc/elements/1.1/> .
+@prefix af:       <http://purl.org/ontology/af/> .
+@prefix foaf:     <http://xmlns.com/foaf/0.1/> .
+@prefix doap:     <http://usefulinc.com/ns/doap#> .
+@prefix cc:       <http://web.resource.org/cc/> .
+@prefix :         <#> .
+
+
+## Properties of this document
+
+<> a vamp:PluginDescription ;
+    foaf:maker         <http://vamp-plugins.org/rdf/template-generator> ;
+    foaf:primaryTopic  <http://vamp-plugins.org/rdf/plugins/vamp-lossy-encoding-detector> .
+
+
+## Maker of the whole plugin library
+
+:library_maker
+    foaf:name "Queen Mary, University of London" ;
+    foaf:logo <http://vamp-plugins.org/rdf/plugins/makers/qm.png> ;
+    foaf:page <http://c4dm.eecs.qmul.ac.uk/> .
+
+
+## Properties of the plugin library, and references to the plugins it contains
+
+plugbase:library a vamp:PluginLibrary ;
+    vamp:identifier        "vamp-lossy-encoding-detector" ;
+    foaf:maker             :library_maker ; 
+    vamp:available_plugin  plugbase:lossydetector ; 
+    vamp:available_plugin  plugbase:quicklossydetector ; 
+    dc:description        """Tests and reports whether audio appears to have been previously compressed using a lossy encoder such as MP3.""" ;
+    foaf:page              <https://github.com/cannam/vamp-lossy-encoding-detector> ;
+    doap:download-page     <https://github.com/cannam/vamp-lossy-encoding-detector/releases> 
+    .
+
+
+## Properties of the Lossy Encoding Detector plugin
+
+plugbase:lossydetector a vamp:Plugin ;
+    dc:title              "Lossy Encoding Detector" ;
+    vamp:name             "Lossy Encoding Detector" ;
+    dc:description        """Tests and reports whether audio appears to have been previously compressed using a lossy encoder such as MP3.""" ;
+    foaf:maker            :library_maker ;
+    dc:rights             """MIT/X11 licence""" ;
+    vamp:identifier       "lossydetector" ;
+    vamp:vamp_API_version vamp:api_version_2 ;
+    owl:versionInfo       "1" ;
+    vamp:input_domain     vamp:FrequencyDomain ;
+
+    vamp:output      plugbase:lossydetector_output_lossy ;
+    vamp:output      plugbase:lossydetector_output_cf ;
+    .
+plugbase:lossydetector_output_lossy a  vamp:SparseOutput ;
+    vamp:identifier       "lossy" ;
+    dc:title              "Lossy" ;
+    dc:description        """A single estimate for whether the input has been lossily encoded in the past or not. 1 indicates yes it has, 0 indicates no it hasn't."""  ;
+    vamp:fixed_bin_count  "true" ;
+    vamp:unit             "" ;
+    a                     vamp:QuantizedOutput ;
+    vamp:quantize_step    1  ;
+    a                 vamp:KnownExtentsOutput ;
+    vamp:min_value    0  ;
+    vamp:max_value    1  ;
+    vamp:bin_count        1 ;
+    vamp:sample_type      vamp:VariableSampleRate ;
+    .
+plugbase:lossydetector_output_cf a  vamp:DenseOutput ;
+    vamp:identifier       "cf" ;
+    dc:title              "Classification function" ;
+    dc:description        """A series of values indicating the changing detected likelihood of lossy encoding, from 0 (believed to be lossless) to 1 (believed lossy)."""  ;
+    vamp:fixed_bin_count  "true" ;
+    vamp:unit             "" ;
+    a                 vamp:KnownExtentsOutput ;
+    vamp:min_value    0  ;
+    vamp:max_value    1  ;
+    vamp:bin_count        1 ;
+    .
+
+## Properties of the Lossy Encoding Detector (Quick) plugin
+
+plugbase:quicklossydetector a vamp:Plugin ;
+    dc:title              "Lossy Encoding Detector (Quick)" ;
+    vamp:name             "Lossy Encoding Detector (Quick)" ;
+    dc:description        """Tests and reports whether audio appears to have been previously compressed using a lossy encoder such as MP3. Unlike the full version of the plugin, this one examines only a tiny part of the input.""" ;
+    foaf:maker            :library_maker ;
+    dc:rights             """MIT/X11 licence""" ;
+    vamp:identifier       "quicklossydetector" ;
+    vamp:vamp_API_version vamp:api_version_2 ;
+    owl:versionInfo       "1" ;
+    vamp:input_domain     vamp:FrequencyDomain ;
+
+    vamp:output      plugbase:quicklossydetector_output_lossy ;
+    .
+plugbase:quicklossydetector_output_lossy a  vamp:SparseOutput ;
+    vamp:identifier       "lossy" ;
+    dc:title              "QuickLossy" ;
+    dc:description        """A single estimate for whether the input has been lossily encoded in the past or not. 1 indicates yes it has, 0 indicates no it hasn't."""  ;
+    vamp:fixed_bin_count  "true" ;
+    vamp:unit             "" ;
+    a                     vamp:QuantizedOutput ;
+    vamp:quantize_step    1  ;
+    a                 vamp:KnownExtentsOutput ;
+    vamp:min_value    0  ;
+    vamp:max_value    1  ;
+    vamp:bin_count        1 ;
+    vamp:sample_type      vamp:VariableSampleRate ;
+    .
+
