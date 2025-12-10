@@ -45,6 +45,7 @@ static Vamp::PluginAdapter<QuickLossyDetector> quickLossyDetectorAdapter;
 // This is the entry-point for the library, and the only function that
 // needs to be publicly exported.
 
+extern "C"
 const VampPluginDescriptor *
 vampGetPluginDescriptor(unsigned int version, unsigned int index)
 {

@@ -1,0 +1,118 @@
+name: CMake on multiple platforms
+
+on:
+  push:
+    branches: ['**']
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: true
+
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        build_type: [release]
+        include:
+          - os: windows-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: ubuntu-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Poly/ML (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y polyml
+
+      - name: Install Poly/ML (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install polyml
+
+      - name: Install SML (Windows)
+        if: matrix.os == 'windows-latest'
+        run: winget install SMLNJ.SMLNJ.Legacy --accept-source-agreements
+
+      - name: Checkout vamp-plugin-sdk
+        run: ./repoint install
+
+      - name: Set reusable strings
+        id: strings
+        shell: bash
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Install Meson
+        run: python -m pip install --upgrade meson
+
+      - name: Configure
+        run: meson setup ${{ steps.strings.outputs.build-output-dir }} --buildtype=${{ matrix.build_type }}
+        env:
+          CC: ${{ matrix.c_compiler }}
+          CXX: ${{ matrix.cpp_compiler }}
+      - name: Build
+        run: ninja -C ${{ steps.strings.outputs.build-output-dir }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: vamp-lossy-encoding-detector-${{ matrix.os }}-${{ matrix.build_type }}
+          path: |
+            ${{ steps.strings.outputs.build-output-dir }}/**/*.dll
+            ${{ steps.strings.outputs.build-output-dir }}/**/*.so
+            ${{ steps.strings.outputs.build-output-dir }}/**/*.dylib
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: dist
+
+      - name: Prepare release bundle
+        run: |
+          mkdir -p release
+          cp vamp-lossy-encoding-detector.n3 release/
+          cp vamp-lossy-encoding-detector.cat release/
+          find dist -type f -exec cp {} release/ \;
+          cd release
+          zip -r ../vamp-lossy-encoding-detector-all-platforms.zip .
+
+      - name: Set release metadata
+        id: release_meta
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "tag_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "release_name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag_name=continuous" >> "$GITHUB_OUTPUT"
+            echo "release_name=Continuous Integration" >> "$GITHUB_OUTPUT"
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_meta.outputs.tag_name }}
+          name: ${{ steps.release_meta.outputs.release_name }}
+          prerelease: ${{ steps.release_meta.outputs.is_prerelease }}
+          files: |
+            vamp-lossy-encoding-detector-all-platforms.zip

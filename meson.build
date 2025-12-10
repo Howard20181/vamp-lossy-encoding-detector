@@ -17,6 +17,7 @@ conf = configuration_data()
 conf.set('version', meson.project_version())
 configure_file(input: 'version.h.in', output: 'version.h', configuration: conf)
 
+cpp = meson.get_compiler('cpp')
 system = host_machine.system()
 
 plugin_files = [
@@ -46,9 +47,11 @@ elif system == 'darwin'
   ]
   vamp_install_dir = '/Library/Audio/Plug-Ins/Vamp'
 elif system == 'windows'
-  vamp_symbol_args += [
-    '-EXPORT:vampGetPluginDescriptor'
-  ]
+  if cpp.get_id() == 'msvc'
+    vamp_symbol_args += ['/DEF:' + meson.current_source_dir() / 'vamp-plugin.def']
+  else
+    vamp_symbol_args += ['-Wl,/EXPORT:vampGetPluginDescriptor']
+  endif
   vamp_install_dir = 'C:/Program Files/Vamp Plugins'
 endif
 

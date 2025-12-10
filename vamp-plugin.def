@@ -1,0 +1,3 @@
+LIBRARY "vamp-lossy-encoding-detector"
+EXPORTS
+    vampGetPluginDescriptor
